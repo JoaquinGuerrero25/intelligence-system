@@ -7,7 +7,14 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from intelligence.graph.common import historial_previo, texto, ultima_pregunta
-from intelligence.graph.state import ANALISTA, INVESTIGADOR, MAX_STEPS, SINTETIZADOR, SUPERVISOR, OrchestratorState
+from intelligence.graph.state import (
+    ANALISTA,
+    INVESTIGADOR,
+    MAX_STEPS,
+    SINTETIZADOR,
+    SUPERVISOR,
+    OrchestratorState,
+)
 
 MAX_VALIDATION_ATTEMPTS = 2
 
@@ -61,7 +68,8 @@ async def validacion(state: OrchestratorState) -> dict:
 def route_after_validation(state: OrchestratorState) -> Literal["supervisor", "sintetizador"]:
     """Si la rúbrica falla y aún hay presupuesto, vuelve al supervisor; si no, cierra con advertencias."""
     hay_presupuesto = (
-        state.get("validation_attempts", 0) < MAX_VALIDATION_ATTEMPTS and state.get("step_count", 0) < MAX_STEPS
+        state.get("validation_attempts", 0) < MAX_VALIDATION_ATTEMPTS
+        and state.get("step_count", 0) < MAX_STEPS
     )
     if state.get("validation_feedback") and hay_presupuesto:
         return SUPERVISOR

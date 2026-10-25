@@ -80,7 +80,9 @@ class RAGService:
         hits = await self.store.query(vector, k, categoria)
         return [h.id for h in hits if h.id in self.documents]
 
-    async def search(self, query: str, k: int | None = None, categoria: str | None = None) -> list[RetrievedChunk]:
+    async def search(
+        self, query: str, k: int | None = None, categoria: str | None = None
+    ) -> list[RetrievedChunk]:
         k = k or self.top_k
         candidatos = max(k * 2, 10)
         with tracer().start_as_current_span("rag.search") as span:

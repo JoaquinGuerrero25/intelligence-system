@@ -25,10 +25,16 @@ def create_llm(settings: Settings, role: str = "generic") -> BaseChatModel:
     if settings.llm_provider == "openai":
         from langchain_openai import ChatOpenAI
 
-        return ChatOpenAI(model=modelo, temperature=0, api_key=settings.openai_api_key, rate_limiter=limitador)
+        return ChatOpenAI(
+            model=modelo, temperature=0, api_key=settings.openai_api_key, rate_limiter=limitador
+        )
 
     from langchain_google_genai import ChatGoogleGenerativeAI
 
     return ChatGoogleGenerativeAI(
-        model=modelo, temperature=0, max_retries=6, google_api_key=settings.google_api_key, rate_limiter=limitador
+        model=modelo,
+        temperature=0,
+        max_retries=6,
+        google_api_key=settings.google_api_key,
+        rate_limiter=limitador,
     )

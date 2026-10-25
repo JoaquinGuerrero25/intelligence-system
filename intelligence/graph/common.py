@@ -54,7 +54,9 @@ def make_specialist_node(
 
         resultado = await agent.ainvoke({"messages": [HumanMessage(prompt)]}, {"recursion_limit": 14})
         mensajes = resultado["messages"]
-        salida = next((texto(m.content) for m in reversed(mensajes) if isinstance(m, AIMessage) and m.content), "")
+        salida = next(
+            (texto(m.content) for m in reversed(mensajes) if isinstance(m, AIMessage) and m.content), ""
+        )
         herramientas = [m.name for m in mensajes if isinstance(m, ToolMessage) and m.name]
 
         return {

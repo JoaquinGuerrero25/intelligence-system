@@ -42,7 +42,9 @@ def build_graph(
     g.add_node(SUPERVISOR, make_supervisor_node(llm))
     g.add_node(
         INVESTIGADOR,
-        make_specialist_node(INVESTIGADOR, build_research_agent(research_llm or llm, rag), "research_notes", _contexto),
+        make_specialist_node(
+            INVESTIGADOR, build_research_agent(research_llm or llm, rag), "research_notes", _contexto
+        ),
     )
     g.add_node(
         ANALISTA,
@@ -58,9 +60,13 @@ def build_graph(
     g.add_edge(INVESTIGADOR, SUPERVISOR)
     g.add_edge(ANALISTA, SUPERVISOR)
     # Validación aprobada (o sin presupuesto) -> pasa por la compuerta HITL antes de sintetizar.
-    g.add_conditional_edges(VALIDACION, route_after_validation, {SUPERVISOR: SUPERVISOR, SINTETIZADOR: APROBACION})
     g.add_conditional_edges(
-        APROBACION, route_after_approval, {EJECUTAR_ACCION: EJECUTAR_ACCION, SINTETIZADOR: SINTETIZADOR, END: END}
+        VALIDACION, route_after_validation, {SUPERVISOR: SUPERVISOR, SINTETIZADOR: APROBACION}
+    )
+    g.add_conditional_edges(
+        APROBACION,
+        route_after_approval,
+        {EJECUTAR_ACCION: EJECUTAR_ACCION, SINTETIZADOR: SINTETIZADOR, END: END},
     )
     g.add_edge(EJECUTAR_ACCION, SINTETIZADOR)
     g.add_edge(SINTETIZADOR, END)

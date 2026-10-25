@@ -12,7 +12,9 @@ class VectorStore(Protocol):
 
     async def upsert(self, records: list[VectorRecord]) -> None: ...
 
-    async def query(self, vector: list[float], top_k: int, categoria: str | None = None) -> list[VectorHit]: ...
+    async def query(
+        self, vector: list[float], top_k: int, categoria: str | None = None
+    ) -> list[VectorHit]: ...
 
     async def close(self) -> None: ...
 
@@ -75,7 +77,11 @@ class PineconeVectorStore:
     async def upsert(self, records: list[VectorRecord]) -> None:
         index = await self._get_index()
         vectors = [
-            {"id": r.id, "values": r.values, "metadata": {k: v for k, v in r.metadata.items() if v is not None}}
+            {
+                "id": r.id,
+                "values": r.values,
+                "metadata": {k: v for k, v in r.metadata.items() if v is not None},
+            }
             for r in records
         ]
         await index.upsert(vectors=vectors, namespace=self.s.pinecone_namespace)

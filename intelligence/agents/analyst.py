@@ -9,9 +9,9 @@ import math
 import operator
 import statistics
 
+from langchain.agents import create_agent
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.tools import tool
-from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field, field_validator
 
 from intelligence.rag.embeddings import strip_accents
@@ -165,4 +165,4 @@ ANALYST_TOOLS = [analizar_sentimiento, calcular_estadisticas, calcular_expresion
 
 
 def build_analyst_agent(llm: BaseChatModel):
-    return create_react_agent(llm, ANALYST_TOOLS, prompt=SYSTEM_PROMPT, name="analista")
+    return create_agent(llm, ANALYST_TOOLS, system_prompt=SYSTEM_PROMPT, name="analista")

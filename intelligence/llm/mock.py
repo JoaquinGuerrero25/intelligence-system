@@ -42,7 +42,9 @@ class HeuristicChat(BaseChatModel):
     def _generate(self, messages: list[BaseMessage], stop=None, run_manager=None, **kw: Any) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=self._responder(messages))])
 
-    async def _agenerate(self, messages: list[BaseMessage], stop=None, run_manager=None, **kw: Any) -> ChatResult:
+    async def _agenerate(
+        self, messages: list[BaseMessage], stop=None, run_manager=None, **kw: Any
+    ) -> ChatResult:
         return self._generate(messages)
 
     def bind_tools(self, tools: Sequence[Any], **kw: Any):
@@ -59,7 +61,9 @@ class HeuristicChat(BaseChatModel):
         resumen = _ultimo_humano(list(messages))
         pregunta = (re.search(r"Pregunta del usuario: (.*)", resumen) or [None, ""])[1].strip()
         if "Aporte de analista" in resumen:
-            return Decision(next_agent="FINISH", reason="Hay datos citados y resultados numéricos del analista.")
+            return Decision(
+                next_agent="FINISH", reason="Hay datos citados y resultados numéricos del analista."
+            )
         if "Aporte de investigador" in resumen:
             return Decision(
                 next_agent="analista",
@@ -94,7 +98,9 @@ class HeuristicChat(BaseChatModel):
             args: dict[str, Any] = {"consulta": tarea[:300], "max_resultados": 8}
             if len(activas) == 1:
                 args["categoria"] = activas[0]
-            return AIMessage(content="", tool_calls=[_tool_call("buscar_en_base_conocimiento", args, "inv-1")])
+            return AIMessage(
+                content="", tool_calls=[_tool_call("buscar_en_base_conocimiento", args, "inv-1")]
+            )
 
         resultados = json.loads(tool_msgs[-1].content).get("resultados", [])
         producto = next((p for p in _PRODUCTOS if p in q), None)
@@ -134,7 +140,9 @@ class HeuristicChat(BaseChatModel):
                     f"{c['positivo']} positivas, {c['neutral']} neutrales, {c['negativo']} negativas"
                 )
             elif m.name == "calcular_expresion":
-                frases.append(f"{d['expresion']} = {d['resultado']:,.0f}" if not d["error"] else f"error: {d['error']}")
+                frases.append(
+                    f"{d['expresion']} = {d['resultado']:,.0f}" if not d["error"] else f"error: {d['error']}"
+                )
         citas = ", ".join(f"[{i}]" for i in ids)
         return AIMessage(content=f"Análisis de {citas}: " + "; ".join(frases) + ".")
 
@@ -144,7 +152,9 @@ class HeuristicChat(BaseChatModel):
         reseñas = re.findall(r"\[(doc-\d{3})\] \((\d(?:\.\d)?)/5\) [^:]*: (.*)", contexto)
         if reseñas:
             calls.append(_tool_call("analizar_sentimiento", {"textos": [t for _, _, t in reseñas]}, "ana-1"))
-            calls.append(_tool_call("calcular_estadisticas", {"valores": [float(c) for _, c, _ in reseñas]}, "ana-2"))
+            calls.append(
+                _tool_call("calcular_estadisticas", {"valores": [float(c) for _, c, _ in reseñas]}, "ana-2")
+            )
         else:
             unidades = [int(u) for u in re.findall(r"= (\d+) unidades", contexto)]
             precios = [int(p) for p in re.findall(r"(\d+) USD por unidad", contexto)]
@@ -152,7 +162,9 @@ class HeuristicChat(BaseChatModel):
                 expr = "+".join(map(str, unidades))
                 calls.append(_tool_call("calcular_expresion", {"expresion": expr}, "ana-1"))
                 if precios:
-                    calls.append(_tool_call("calcular_expresion", {"expresion": f"({expr})*{precios[0]}"}, "ana-2"))
+                    calls.append(
+                        _tool_call("calcular_expresion", {"expresion": f"({expr})*{precios[0]}"}, "ana-2")
+                    )
             else:
                 numeros = [float(n) for n in re.findall(r"(?<![\w-])(\d+(?:\.\d+)?)(?![\w-])", contexto)]
                 if numeros:
@@ -164,7 +176,9 @@ class HeuristicChat(BaseChatModel):
     @staticmethod
     def _sintetizar(messages: list[BaseMessage]) -> AIMessage:
         entrada = _ultimo_humano(messages)
-        analisis = (re.search(r"Resultados del analista:\n(.*?)(?:\n\nAdvertencias|\Z)", entrada, re.S) or [None, ""])[1]
+        analisis = (
+            re.search(r"Resultados del analista:\n(.*?)(?:\n\nAdvertencias|\Z)", entrada, re.S) or [None, ""]
+        )[1]
         pregunta = (re.search(r"Pregunta: (.*)", entrada) or [None, ""])[1]
         advertencia = (re.search(r"Advertencias[^:]*: (.*)", entrada) or [None, ""])[1]
         texto = f"Respuesta a «{pregunta.strip()}»: {analisis.strip()}"

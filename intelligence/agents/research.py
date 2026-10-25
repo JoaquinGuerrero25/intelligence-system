@@ -3,9 +3,9 @@
 Las herramientas validan entradas y salidas con Pydantic y son `async`: la búsqueda no bloquea el loop.
 """
 
+from langchain.agents import create_agent
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.tools import BaseTool, tool
-from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 
 from intelligence.rag import KBDocument, RAGService, RetrievedChunk
@@ -45,7 +45,9 @@ def build_research_tools(rag: RAGService) -> list[BaseTool]:
     async def buscar(consulta: str, categoria: Categoria | None = None, max_resultados: int = 5) -> str:
         """Búsqueda híbrida (BM25 + vectorial) en la base de conocimiento: reseñas, ventas, políticas, docs."""
         hallados = await rag.search(consulta, k=max_resultados, categoria=categoria)
-        return BuscarOutput(resultados=hallados, aviso="" if hallados else "Sin coincidencias.").model_dump_json()
+        return BuscarOutput(
+            resultados=hallados, aviso="" if hallados else "Sin coincidencias."
+        ).model_dump_json()
 
     @tool("leer_documento", args_schema=LeerInput)
     async def leer(doc_id: str) -> str:
@@ -59,4 +61,4 @@ def build_research_tools(rag: RAGService) -> list[BaseTool]:
 
 
 def build_research_agent(llm: BaseChatModel, rag: RAGService):
-    return create_react_agent(llm, build_research_tools(rag), prompt=SYSTEM_PROMPT, name="investigador")
+    return create_agent(llm, build_research_tools(rag), system_prompt=SYSTEM_PROMPT, name="investigador")

@@ -80,7 +80,11 @@ def aplicar_guardas(decision: Decision, state: OrchestratorState) -> tuple[str, 
         return FINISH, "", f"Tope de {MAX_STEPS} pasos alcanzado: se fuerza el cierre."
 
     if siguiente == ANALISTA and not state.get("research_notes"):
-        return INVESTIGADOR, instruccion, "El analista no puede actuar sin datos: se redirige al investigador."
+        return (
+            INVESTIGADOR,
+            instruccion,
+            "El analista no puede actuar sin datos: se redirige al investigador.",
+        )
 
     if siguiente in (INVESTIGADOR, ANALISTA) and not instruccion.strip():
         instruccion = "Resuelve la parte de tu especialidad de la pregunta del usuario."
@@ -88,7 +92,11 @@ def aplicar_guardas(decision: Decision, state: OrchestratorState) -> tuple[str, 
     if siguiente in ya_aportaron and revisiones.get(siguiente, 0) >= MAX_REVISIONS:
         pendientes = [a for a in (INVESTIGADOR, ANALISTA) if a not in ya_aportaron]
         if pendientes:
-            return pendientes[0], instruccion, f"{siguiente} agotó sus revisiones: se delega a {pendientes[0]}."
+            return (
+                pendientes[0],
+                instruccion,
+                f"{siguiente} agotó sus revisiones: se delega a {pendientes[0]}.",
+            )
         return FINISH, "", f"{siguiente} agotó sus revisiones ({MAX_REVISIONS}): se cierra con lo disponible."
 
     return siguiente, instruccion, ""

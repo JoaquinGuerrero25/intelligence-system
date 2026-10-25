@@ -61,7 +61,11 @@ async def aprobacion_humana(state: OrchestratorState) -> dict:
     }
     if aprobada:
         msg = f"Aprobada por {registro['reviewer']}."
-        return {"requires_approval": True, "approval": registro, "messages": [AIMessage(content=msg, name="aprobacion")]}
+        return {
+            "requires_approval": True,
+            "approval": registro,
+            "messages": [AIMessage(content=msg, name="aprobacion")],
+        }
     msg = (
         f"Tarea RECHAZADA por {registro['reviewer']}. Motivo: {registro['comment'] or 'sin comentario'}. "
         "No se ejecutó ninguna acción."
@@ -83,5 +87,7 @@ def route_after_approval(state: OrchestratorState) -> Literal["ejecutar_accion",
 
 async def ejecutar_accion(state: OrchestratorState) -> dict:
     """Efecto secundario (simulado) que solo ocurre tras la aprobación humana."""
-    entrada = f"Acción ejecutada tras aprobación de {state['approval']['reviewer']}: {ultima_pregunta(state)[:200]}"
+    entrada = (
+        f"Acción ejecutada tras aprobación de {state['approval']['reviewer']}: {ultima_pregunta(state)[:200]}"
+    )
     return {"action_log": [entrada]}
