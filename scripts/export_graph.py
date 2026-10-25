@@ -1,9 +1,8 @@
 """Genera el diagrama Mermaid del grafo REAL compilado (docs/graph.mmd), para pegarlo en el README.
 
-    python scripts/export_graph.py
+python scripts/export_graph.py
 """
 
-import asyncio
 from pathlib import Path
 
 from intelligence.config import Settings
@@ -11,7 +10,7 @@ from intelligence.graph import create_graph
 from intelligence.rag import build_rag_service
 
 
-async def main() -> None:
+def main() -> None:
     settings = Settings(_env_file=None, llm_provider="mock", phoenix_enabled=False)
     rag = build_rag_service(settings)
     grafo = create_graph(settings, rag)
@@ -21,4 +20,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

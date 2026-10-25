@@ -1,8 +1,8 @@
 """Demuestra que las conversaciones sobreviven al reinicio del servidor (checkpointer en Redis).
 
-    python scripts/persistence_check.py create      # crea un hilo con una pregunta
-    docker compose restart api                      # reinicia SOLO la API
-    python scripts/persistence_check.py verify      # el hilo sigue ahí y se puede continuar
+python scripts/persistence_check.py create      # crea un hilo con una pregunta
+docker compose restart api                      # reinicia SOLO la API
+python scripts/persistence_check.py verify      # el hilo sigue ahí y se puede continuar
 """
 
 import argparse
@@ -44,11 +44,19 @@ async def main() -> int:
             print("FAIL: el hilo no existe tras el reinicio.")
             return 1
         print(f"Tras el reinicio el hilo conserva {len(h.json()['messages'])} mensajes.")
-        r = await cli.post("/tasks", json={"query": "Ahora lo mismo para las reseñas de la NovaPad Pro.", "thread_id": HILO})
+        r = await cli.post(
+            "/tasks", json={"query": "Ahora lo mismo para las reseñas de la NovaPad Pro.", "thread_id": HILO}
+        )
         job = await esperar(cli, r.json()["job_id"])
-        n = sum(1 for m in (await cli.get(f"/threads/{HILO}/messages")).json()["messages"] if m["role"] == "user")
+        n = sum(
+            1 for m in (await cli.get(f"/threads/{HILO}/messages")).json()["messages"] if m["role"] == "user"
+        )
         print(f"Turno 2: {job['status']} -> {job['result'][:150]}")
-        print(f"OK: el hilo ahora tiene {n} preguntas de usuario." if n == 2 else "FAIL: se perdió el historial.")
+        print(
+            f"OK: el hilo ahora tiene {n} preguntas de usuario."
+            if n == 2
+            else "FAIL: se perdió el historial."
+        )
         return 0 if n == 2 else 1
 
 

@@ -54,7 +54,11 @@ async def esperar(cli: httpx.AsyncClient, job_id: str, aprobar: bool | None) -> 
     while True:
         job = (await cli.get(f"/tasks/{job_id}")).json()
         if job["status"] == "WAITING_APPROVAL" and aprobar is not None and not resuelto:
-            body = {"approved": aprobar, "reviewer": "scenarios", "comment": "" if aprobar else "prueba de rechazo"}
+            body = {
+                "approved": aprobar,
+                "reviewer": "scenarios",
+                "comment": "" if aprobar else "prueba de rechazo",
+            }
             (await cli.post(f"/tasks/{job_id}/approve", json=body)).raise_for_status()
             resuelto = True
         if job["status"] in TERMINALES:
@@ -74,7 +78,10 @@ async def multi_turno(cli: httpx.AsyncClient) -> dict:
     """Dos preguntas en el mismo hilo: la segunda se resuelve con la memoria de la primera."""
     hilo = f"demo-{uuid.uuid4().hex[:6]}"
     t0 = time.perf_counter()
-    pasos = ["Investiga las reseñas de la AuroraBook X14 y calcula la calificación promedio.", "Ahora lo mismo para las reseñas de la NovaPad Pro."]
+    pasos = [
+        "Investiga las reseñas de la AuroraBook X14 y calcula la calificación promedio.",
+        "Ahora lo mismo para las reseñas de la NovaPad Pro.",
+    ]
     job = {}
     for q in pasos:
         r = await cli.post("/tasks", json={"query": q, "thread_id": hilo})
@@ -107,7 +114,9 @@ async def main() -> int:
         print(f"[{marca}] {r['nombre']:<38} estado={r['job']['status']:<9} {r['segundos']:5.1f}s")
         print(f"        respuesta: {(r['job'].get('result') or r['job'].get('error') or '')[:170]}")
     ok = sum(r["ok"] for r in resultados)
-    print(f"\n{ok}/{len(resultados)} escenarios OK en {total:.1f}s (en paralelo). Trazas: Phoenix -> http://localhost:6006")
+    print(
+        f"\n{ok}/{len(resultados)} escenarios OK en {total:.1f}s (en paralelo). Trazas: Phoenix -> http://localhost:6006"
+    )
     return 0 if ok == len(resultados) else 1
 
 
