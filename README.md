@@ -137,7 +137,7 @@ Estados del job: `PENDING → RUNNING → (WAITING_APPROVAL → PENDING → RUNN
 
 `init_observability()` registra un exportador OTLP hacia Phoenix e instrumenta LangChain/LangGraph con OpenInference. Cada job es **una traza** con un span raíz `job` (`session.id` = `thread_id`, para ver conversaciones completas en *Sessions*), un span por nodo del grafo, por llamada al LLM (tokens y modelo → costo, con un proveedor real), por herramienta y un span `rag.search` de tipo `RETRIEVER` con los documentos recuperados y sus scores.
 
-`python scripts/run_scenarios.py` ejecuta **6 pruebas de punta a punta, en paralelo**, contra el sistema real (Docker Compose: API + Redis Stack + Phoenix):
+`python scripts/run_scenarios.py` ejecuta **6 pruebas de punta a punta, en paralelo**, contra el sistema real (Docker Compose: API + Redis Stack + Phoenix). Resultados con el LLM `mock`; más abajo, la corrida con LLM real:
 
 | # | Prueba | Resultado esperado y obtenido |
 |---|---|---|
@@ -161,7 +161,29 @@ Evidencia en Phoenix (proyecto `intelligence-system`):
 
 ![Árbol de spans de una ejecución](docs/screenshots/02-traza-grafo-resenas.png)
 
-> **Honestidad sobre la evidencia:** estas capturas se generaron con `LLM_PROVIDER=mock`, que no consume tokens; por eso la columna de costo aparece en `$0`. La estructura de trazas (nodos, herramientas, RAG, sesiones) es la misma con un LLM real; con `google`/`openai` Phoenix agrega tokens y costo por llamada. Para regenerar las capturas con un modelo real: configurar la clave en `.env`, `docker compose up -d --build` y volver a correr `scripts/run_scenarios.py`.
+### Corrida con LLM real (Gemini)
+
+Las mismas 6 pruebas, ejecutadas en paralelo con `LLM_PROVIDER=google` y `LLM_MODEL=gemini-3.5-flash-lite` (plan gratuito, `LLM_REQUESTS_PER_MINUTE=4`), contra el stack completo en Docker: **6/6 OK** y las mismas cifras que con el mock (media 3.4/5, 4 050 unidades, media 3.5/5), esta vez redactadas por el modelo con sus citas `[doc-XXX]`.
+
+| Métrica (Phoenix, proyecto `intelligence-system`) | Valor |
+|---|---|
+| Pruebas / estado final | 6 / `DONE` ×4, `REJECTED` ×1 (HITL), multi-turno `DONE` |
+| Latencia extremo a extremo por prueba | 185 s – 425 s (las 6 en paralelo; p95 ≈ máx = 425 s) |
+| Llamadas al LLM | 57 (supervisor, investigador, analista, sintetizador) |
+| Tokens | 50 417 (42 543 de entrada, 7 874 de salida) |
+| Costo estimado por Phoenix | ≈ US$ 0,03 en total (≈ US$ 0,005 por ejecución; en el plan gratuito no se cobra) |
+
+La latencia es alta porque el plan gratuito de Gemini se limita a pocas peticiones por minuto y cada ejecución encadena ~9 llamadas secuenciales; la API sigue respondiendo `202` al instante. Con un plan pago se espera una fracción de ese tiempo.
+
+| Captura | Qué muestra |
+|---|---|
+| [`08-llm-real-traza.png`](docs/screenshots/08-llm-real-traza.png) | Árbol de spans de la prueba 1 con Gemini: `supervisor → ChatGoogleGenerativeAI + PydanticOutputParser`, `investigador → buscar_en_base_conocimiento`, `analista → calcular_estadisticas / analizar_sentimiento`, con **tokens y costo por llamada**. |
+| [`09-llm-real-metricas.png`](docs/screenshots/09-llm-real-metricas.png) | Pestaña *Metrics*: latencia por percentiles, costo y uso de tokens por modelo. |
+| [`10-llm-real-trazas.png`](docs/screenshots/10-llm-real-trazas.png) | Una traza por job del proyecto. |
+
+![Traza con LLM real](docs/screenshots/08-llm-real-traza.png)
+
+> Las capturas `01`–`06` corresponden a una corrida previa con `LLM_PROVIDER=mock` (sin tokens, costo `$0`); sirven para ver la estructura de trazas sin ninguna clave. Las `08`–`10` son con el LLM real.
 
 ### Persistencia tras reinicio (verificada)
 
