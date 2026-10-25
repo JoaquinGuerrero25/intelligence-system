@@ -4,6 +4,7 @@ Uso:  uvicorn intelligence.api:app --port 8000
 """
 
 import asyncio
+import inspect
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -88,7 +89,21 @@ async def lifespan(app: FastAPI):
         await redis.aclose()
 
 
-app = FastAPI(title="The Intelligence System", version="1.0.0", description=DESCRIPTION, lifespan=lifespan)
+# Las versiones recientes de FastAPI emiten spans HTTP propios; los apagamos para que en Phoenix solo
+# queden las trazas del sistema (una por job) y no el ruido del polling de GET /tasks/{id}.
+_SIN_SPANS_HTTP = (
+    {"telemetry": {"tracing": False, "metrics": False}}
+    if "telemetry" in inspect.signature(FastAPI.__init__).parameters
+    else {}
+)
+
+app = FastAPI(
+    title="The Intelligence System",
+    version="1.0.0",
+    description=DESCRIPTION,
+    lifespan=lifespan,
+    **_SIN_SPANS_HTTP,
+)
 
 
 def _jobs(request: Request) -> JobStore:

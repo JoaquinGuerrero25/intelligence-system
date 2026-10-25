@@ -29,6 +29,7 @@ async def procesar(job_id: str, resume: dict | None, jobs: JobStore, grafo, time
 
     # Span raíz: agrupa la traza del job y la asocia a una "sesión" de Phoenix (= el hilo de conversación).
     with tracer().start_as_current_span("job") as span:
+        span.set_attribute("openinference.span.kind", "CHAIN")
         span.set_attribute("session.id", thread_id)
         span.set_attribute("job.id", job_id)
         span.set_attribute("job.resume", resume is not None)

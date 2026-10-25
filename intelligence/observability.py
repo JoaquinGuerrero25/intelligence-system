@@ -29,6 +29,7 @@ def init_observability(settings: Settings) -> bool:
         endpoint=f"{endpoint}/v1/traces",
         batch=True,
         set_global_tracer_provider=True,
+        auto_instrument=False,  # solo instrumentamos LangChain a mano: sin ruido de GET /health ni del polling
     )
     LangChainInstrumentor().instrument(tracer_provider=provider)
     _iniciado = True
