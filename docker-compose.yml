@@ -1,0 +1,40 @@
+# Un solo comando:  docker compose up --build   (o ./run.sh)
+services:
+  redis:
+    image: redis/redis-stack-server:latest # RedisJSON + RediSearch: requeridos por el checkpointer de LangGraph
+    environment:
+      REDIS_ARGS: "--appendonly yes" # los checkpoints sobreviven al reinicio del contenedor
+    volumes:
+      - redis_data:/data
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  phoenix:
+    image: arizephoenix/phoenix:latest # UI en http://localhost:6006 (OTLP HTTP en /v1/traces)
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+    volumes:
+      - phoenix_data:/mnt/data
+    ports: ["6006:6006", "4317:4317"]
+
+  api:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REDIS_URL: redis://redis:6379
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
+    ports: ["8000:8000"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      phoenix:
+        condition: service_started
+
+volumes:
+  redis_data:
+  phoenix_data:
