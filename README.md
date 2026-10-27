@@ -185,6 +185,19 @@ La latencia es alta porque el plan gratuito de Gemini se limita a pocas peticion
 
 > Las capturas `01`–`06` corresponden a una corrida previa con `LLM_PROVIDER=mock` (sin tokens, costo `$0`); sirven para ver la estructura de trazas sin ninguna clave. Las `08`–`10` son con el LLM real.
 
+### Corrida completa: Gemini + embeddings de Google + Pinecone
+
+Además de la corrida anterior, las 6 pruebas se repitieron con **todo real**: `LLM_PROVIDER=google`, `EMBEDDING_PROVIDER=google` (`gemini-embedding-001`, 1536 dimensiones) y `VECTOR_BACKEND=pinecone` (índice serverless `intelligence-kb`, métrica coseno, namespace `productos-es`, creado por `PineconeVectorStore` con `PineconeAsyncio`). Resultado: **6/6 OK** (`DONE` ×5 incluida la multi-turno, `REJECTED` ×1), 394 s la más lenta de las tareas simples y 450 s la multi-turno (plan gratuito), 58 llamadas al LLM, 50 432 tokens, 7 búsquedas `rag.search` contra Pinecone. El log de arranque confirma `API lista: llm=google vector=pinecone` y el índice quedó `Ready` con 15 vectores.
+
+Con embeddings neuronales la rama vectorial aporta recall semántico real: la consulta *"cuánto tardan en reembolsar una compra"* recupera la política de devoluciones (`doc-012`) aunque no comparte palabras con ella, y *"el equipo se calienta mucho y la batería dura poco"* recupera la reseña negativa (`doc-003`).
+
+| Captura | Qué muestra |
+|---|---|
+| [`11-pinecone-traza.png`](docs/screenshots/11-pinecone-traza.png) | Traza de la prueba 1 con LLM, embeddings y vector store reales. |
+| [`12-pinecone-metricas.png`](docs/screenshots/12-pinecone-metricas.png) | Métricas de la corrida: latencia, costo y tokens. |
+
+Para reproducirlo: en `.env`, `LLM_PROVIDER=google`, `GOOGLE_API_KEY`, `EMBEDDING_PROVIDER=google`, `EMBEDDING_DIMENSION=1536`, `VECTOR_BACKEND=pinecone`, `PINECONE_API_KEY`. El índice se crea solo si no existe.
+
 ### Persistencia tras reinicio (verificada)
 
 ```bash
@@ -213,7 +226,7 @@ Cubren el RAG (fusión, filtros, idempotencia de la indexación), la validación
 
 ## Limitaciones conocidas
 
-- `PineconeVectorStore` (SDK async) está implementado pero **no se ejecutó contra un índice real** en este entorno (no hay clave); el camino por defecto (`memory`) sí está probado de punta a punta.
+- El camino por defecto (`memory` + embeddings `local`) es el de `run.sh` sin claves; la combinación Pinecone + embeddings neuronales requiere claves propias (ver la corrida verificada más arriba).
 - Un job que estaba `RUNNING` cuando el proceso muere queda en ese estado (no hay recuperación automática); su lock de hilo expira a la hora. Los jobs `WAITING_APPROVAL` sí se reanudan tras un reinicio.
 - El análisis de sentimiento es un léxico en español simple (suficiente para demostrar la herramienta, no un modelo de producción).
 - El despliegue es local (Docker Compose); no incluye CI/CD ni infraestructura cloud, que quedan fuera del alcance de la entrega.
